@@ -1,3 +1,78 @@
 # pml
-coursera pml
-123
+---
+title: "PML"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load all required libraries
+
+```{r}
+library(caret)
+library(rpart)
+library(randomForest)
+library(rattle)
+```
+
+##Data loading and cleansing 
+1. Load csv files
+2. Remove columns which have NAs
+3. Remove columns which are ids
+4. Columns are reduced from 160 to 53
+```{r}
+training <- read.csv("C:\\pml-training.csv")
+testing <- read.csv("C:\\pml-testing.csv")
+dim(training)
+dim(testing)
+NZV <- nearZeroVar(training)
+training <- training[,-NZV]
+testing <- testing[,-NZV]
+dim(training)
+dim(testing)
+NACols <- sapply(training, function(x) mean(is.na(x))) > 0.95
+training <- training[,NACols == FALSE]
+testing <- testing[,NACols == FALSE]
+dim(training)
+dim(testing)
+training <- training[,-c(1:5)]
+testing <- testing[,-c(1:5)]
+dim(training)
+dim(testing)
+```
+
+##Cross validation
+I split the training dataset into training and testing sets with rations 0.7:0.3
+```{r}
+trainRows <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+trainPart <- training[trainRows,]
+testPart <- training[-trainRows,]
+dim(trainPart)
+dim(testPart)
+```
+
+##Model 1 : Use decision tree for building ML model
+```{r}
+treeModel <- train(classe~., method="rpart", data=trainPart)
+fancyRpartPlot(treeModel$finalModel)
+treePred <- predict(treeModel, testPart)
+confusionMatrix(treePred, testPart$classe)
+```
+From the confusion matrix, we can see that accuracy is just around 55 percent
+
+##Model 2 : Use random forest model
+```{r}
+rfModel <- randomForest(classe~., data=trainPart, ntree=500)
+treePred2<- predict(rfModel, testPart)
+confusionMatrix(treePred2, testPart$classe)
+```
+##Using random forest model for 20 test cases
+```{r}
+predict(rfModel, testing)
+```
+
+
