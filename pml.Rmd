@@ -1,7 +1,6 @@
 ---
 title: "PML"
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -45,7 +44,7 @@ dim(testing)
 ```
 
 ##Cross validation
-I split the training dataset into training and testing sets with rations 0.7:0.3
+I split the training dataset into training and testing sets with rations 0.7:0.3. For two models below, I used 5 for cross validation
 ```{r}
 trainRows <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
 trainPart <- training[trainRows,]
@@ -56,16 +55,19 @@ dim(testPart)
 
 ##Model 1 : Use decision tree for building ML model
 ```{r}
-treeModel <- train(classe~., method="rpart", data=trainPart)
+treeModel <- train(classe~., method="rpart", data=trainPart, trControl=trainControl(method="cv", 5))
+treeModel
 fancyRpartPlot(treeModel$finalModel)
 treePred <- predict(treeModel, testPart)
 confusionMatrix(treePred, testPart$classe)
+confusionMatrix(treePred, testPart$classe)$overall
 ```
-From the confusion matrix, we can see that accuracy is just around 55 percent
+From the confusion matrix, we can see that accuracy is just around 49 percent
 
 ##Model 2 : Use random forest model
 ```{r}
-rfModel <- randomForest(classe~., data=trainPart, ntree=500)
+rfModel <- train(classe~., method="rf", data=trainPart, trControl=trainControl(method="cv", 5))
+rfModel
 treePred2<- predict(rfModel, testPart)
 confusionMatrix(treePred2, testPart$classe)
 ```
